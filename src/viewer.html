@@ -1,0 +1,27 @@
+<!doctype html><meta charset=utf-8><title>Hive</title>
+<style>
+body{margin:0;font:13px system-ui;background:#111;color:#ddd;display:grid;grid-template-columns:1fr 320px;height:100vh}
+main{display:flex;flex-direction:column;min-width:0}
+#view{flex:1;min-height:0;background:#000 center/contain no-repeat}
+bar{display:flex;gap:8px;padding:8px;background:#1b1b1b;align-items:center}
+button{background:#2d6cdf;color:#fff;border:0;padding:6px 12px;border-radius:4px;cursor:pointer}button.stop{background:#c0392b}
+aside{overflow:auto;background:#181818;padding:8px;border-left:1px solid #333}
+h4{margin:10px 0 4px;color:#8ab}pre{white-space:pre-wrap;margin:0;font-size:12px}
+.c{color:#f90}.e{color:#9c9}
+</style>
+<main><bar><b>Hive</b><span id=lease>…</span><button onclick="play()">▶ Playtest</button><button class=stop onclick="stop()">■ Stop</button>
+<input id=who value=human size=8 title="actor"></bar><div id=view></div></main>
+<aside><h4>Claims</h4><pre id=claims></pre><h4>Activity</h4><pre id=ev></pre><h4>Console</h4><pre id=con></pre></aside>
+<script>
+const $=id=>document.getElementById(id),actor=()=>encodeURIComponent($('who').value);
+const post=(p,b)=>fetch(p,{method:'POST',body:JSON.stringify({actor:$('who').value,...b})}).then(r=>r.json());
+const play=async()=>alert(JSON.stringify(await post('/studio/play',{intent:'manual playtest'})));
+const stop=async()=>{const r=await post('/studio/stop',{});if(r.error==='not_owner'&&confirm('Owned by '+r.held_by.owner+'. Force stop?'))await post('/studio/stop',{force:true})};
+async function frame(){try{const r=await fetch('/studio/screenshot');if(r.ok){$('view').style.backgroundImage=`url(${URL.createObjectURL(await r.blob())})`}}catch{}setTimeout(frame,1000)}
+async function side(){try{const c=await(await fetch('/context?limit=15')).json(),s=await(await fetch('/studio/state')).json().catch(()=>({}));
+$('claims').innerHTML=c.active_claims.map(x=>`<span class=c>${x.actor}</span> ${x.path} — ${x.intent}`).join('\n')||'none';
+$('ev').innerHTML=c.recent.slice(-15).reverse().map(e=>`<span class=e>${e.actor}</span> ${e.kind} ${e.path??''} ${e.summary??''}`).join('\n');
+const l=c.playtest;$('lease').textContent=l?`▶ ${l.owner}: ${l.intent||'playtesting'}`:'idle';
+const k=await(await fetch('/studio/console')).json().catch(()=>({}));$('con').textContent=typeof k.output==='string'?k.output.slice(-1500):JSON.stringify(k.output??k.error??'',null,1).slice(-1500)}catch{}setTimeout(side,2000)}
+frame();side();
+</script>
