@@ -1,0 +1,14 @@
+{
+  "name": "hive",
+  "version": "0.1.0",
+  "license": "MIT",
+  "type": "module",
+  "description": "Shared-context collaboration server for Roblox projects (Rojo-compatible)",
+  "scripts": { "start": "node src/server.js", "mcp": "node src/mcp.js", "test": "node --test test/*.test.js" },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "ws": "^8.18.0",
+    "yjs": "^13.6.0",
+    "zod": "^3.23.0"
+  }
+}
